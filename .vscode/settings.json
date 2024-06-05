@@ -1,0 +1,18 @@
+{
+    "editor.formatOnSave": true,
+    "editor.autoIndent": "advanced",
+    "editor.detectIndentation": true,
+    "editor.rulers": [
+        {
+            "column": 99,
+            "color": "#33a7ca"
+        },
+    ],
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": true,
+        }
+    }
+}
