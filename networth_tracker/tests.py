@@ -2,6 +2,8 @@
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.urls import reverse
+from rest_framework.test import APIClient
 
 pytestmark = pytest.mark.django_db
 
@@ -50,3 +52,20 @@ class TestUsersManagers:
             User.objects.create_superuser(
                 email="super@user.com", password="foo", is_superuser=False
             )
+
+
+class TestRegisterView:
+    def test_user_registered(self):
+        url = reverse("register")
+
+        data = {
+            "email": "normal@user.com",
+            "password": "foo",
+        }
+
+        client = APIClient()
+        response = client.post(url, data, format="json")
+
+        assert response.status_code == 200
+        assert response.data["email"] == "normal@user.com"
+        assert get_user_model().objects.filter(email="normal@user.com").exists()

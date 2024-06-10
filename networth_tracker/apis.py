@@ -1,0 +1,14 @@
+from rest_framework import exceptions, permissions, response, views
+
+from . import serializer as user_serializer
+
+
+class RegisterView(views.APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = user_serializer.CustomUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return response.Response(serializer.data)
