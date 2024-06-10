@@ -1,6 +1,6 @@
 from rest_framework import exceptions, permissions, response, views
 
-from . import serializer as user_serializer
+from .api import serializers as user_serializer
 
 
 class RegisterView(views.APIView):

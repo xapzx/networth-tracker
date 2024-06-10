@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import CustomUser
+from .models import Account, BankAccount, CustomUser
 
 
 @admin.register(CustomUser)
@@ -58,3 +58,13 @@ class CustomUserAdmin(UserAdmin):
     )
 
     search_fields = ("email",)
+
+
+@admin.register(Account)
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ["user", "first_name", "last_name"]
+
+
+@admin.register(BankAccount)
+class BankAccountAdmin(admin.ModelAdmin):
+    list_display = ["user", "bank", "account_name", "balance", "interest_rate"]
