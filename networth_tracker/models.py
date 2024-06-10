@@ -51,4 +51,4 @@ class BankAccount(models.Model):
     interest_rate = models.FloatField()
 
     def __str__(self):
-        return f"{self.bank - self.account_name}"
+        return f"{self.bank} - {self.account_name}"

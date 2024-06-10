@@ -3,7 +3,10 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from rest_framework import status
 from rest_framework.test import APIClient
+
+from networth_tracker.models import BankAccount, CustomUser
 
 pytestmark = pytest.mark.django_db
 
@@ -66,6 +69,43 @@ class TestRegisterView:
         client = APIClient()
         response = client.post(url, data, format="json")
 
-        assert response.status_code == 200
+        assert response.status_code == status.HTTP_200_OK
         assert response.data["email"] == "normal@user.com"
         assert get_user_model().objects.filter(email="normal@user.com").exists()
+
+
+class TestUserBankAccountViewSet:
+    def test_get_user_bank_accounts(self):
+        url = reverse("bank-accounts-list")
+
+        user = CustomUser.objects.create(email="normal@user.com")
+        account = BankAccount.objects.create(
+            user=user, bank="Bank", account_name="Account", balance=10000.0, interest_rate=4.9
+        )
+
+        BankAccount.objects.create(
+            user=CustomUser.objects.create(email="anotheruser@user.com"),
+            bank="Another Bank",
+            account_name="Another Account",
+            balance=0.0,
+            interest_rate=0.0,
+        )
+
+        client = APIClient()
+        client.force_login(user=user)
+        response = client.get(url)
+
+        assert response.status_code == 200
+        assert len(response.data) == 1
+        assert response.data[0]["user"] == user.id
+        assert response.data[0]["account_name"] == account.account_name
+        assert response.data[0]["bank"] == account.bank
+        assert response.data[0]["balance"] == account.balance
+
+    def test_unauthenticated(self):
+        url = reverse("bank-accounts-list")
+
+        client = APIClient()
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
