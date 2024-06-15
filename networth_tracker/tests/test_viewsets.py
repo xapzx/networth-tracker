@@ -142,7 +142,7 @@ class TestUserBankAccountViewSet:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_update_bank_account_restricted_if_not_owner(
-        self, create_auth_client, custom_user_factory, bank_account_1, bank_account_2
+        self, create_auth_client, custom_user_factory, bank_account_1
     ):
         client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
         url = reverse("bank-accounts-detail", kwargs={"pk": bank_account_1.id})
@@ -153,9 +153,6 @@ class TestUserBankAccountViewSet:
             "interest_rate": 0.0,
         }
         response = client.put(url, data, format="json")
-
-        print(bank_account_1.user.email)
-        print(bank_account_2.user.email)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
