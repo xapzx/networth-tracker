@@ -11,6 +11,12 @@ class AccountViewSet(ModelViewSet):
     serializer_class = AccountSerializer
     permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
 
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 class AdminBankAccountViewSet(ModelViewSet):
     queryset = BankAccount.objects.all()

@@ -37,6 +37,23 @@ class Account(models.Model):
 
     first_name = models.CharField(max_length=64)
     last_name = models.CharField(max_length=64)
+    date_of_birth = models.DateField()
+
+    salary = models.FloatField()
+    eoy_cash_goal = models.FloatField()
+    emergency_fund = models.FloatField()
+
+    CHOICES = ((0, "Light"), (1, "Normal"), (2, "Aggressive"))
+    allocation_intensity = models.PositiveSmallIntegerField(choices=CHOICES, default=1)
+    allocation_etfs = models.FloatField()
+    allocation_stocks = models.FloatField()
+    allocation_cryptocurrency = models.FloatField()
+    allocation_cash = models.FloatField()
+    allocation_managed_funds = models.FloatField()
+    allocation_other = models.FloatField()
+
+    short_term_tax_rate = models.FloatField()
+    long_term_tax_rate = models.FloatField()
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

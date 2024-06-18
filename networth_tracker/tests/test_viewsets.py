@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from networth_tracker.api.serializers import BankAccountSerializer
-from networth_tracker.models import BankAccount
+from networth_tracker.models import Account, BankAccount
 
 pytestmark = pytest.mark.django_db
 
@@ -169,3 +169,153 @@ class TestUserBankAccountViewSet:
 
         assert response.status_code == status.HTTP_201_CREATED
         assert BankAccount.objects.filter(user=custom_user_1).exists()
+
+
+class TestAccountViewSet:
+    def test_account_is_created(self, create_auth_client, custom_user_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-list")
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "date_of_birth": "1990-01-01",
+            "salary": 10000.0,
+            "eoy_cash_goal": 20000.0,
+            "emergency_fund": 5000.0,
+            "allocation_intensity": 1,
+            "allocation_etfs": 0.0,
+            "allocation_stocks": 0.0,
+            "allocation_cryptocurrency": 0.0,
+            "allocation_cash": 0.0,
+            "allocation_managed_funds": 0.0,
+            "allocation_other": 0.0,
+            "short_term_tax_rate": 0.0,
+            "long_term_tax_rate": 0.0,
+        }
+        response = client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Account.objects.filter(user=custom_user_1).exists()
+
+    def test_get_account_list_for_user(
+        self, create_auth_client, custom_user_1, account_1, custom_user_factory, account_factory
+    ):
+        account_factory(
+            user=custom_user_factory(email="anotheruser@user.com"),
+        )
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-list")
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert response.data[0]["id"] == account_1.id
+
+    def test_get_account_by_id(self, create_auth_client, custom_user_1, account_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == account_1.id
+
+    def test_get_account_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, account_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_account_by_id(self, create_auth_client, custom_user_1, account_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Account.objects.filter(id=account_1.id).exists()
+
+    def test_update_account_by_id(self, create_auth_client, custom_user_1, account_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "date_of_birth": "1990-01-01",
+            "salary": 10000.0,
+            "eoy_cash_goal": 20000.0,
+            "emergency_fund": 5000.0,
+            "allocation_intensity": 1,
+            "allocation_etfs": 0.0,
+            "allocation_stocks": 0.0,
+            "allocation_cryptocurrency": 0.0,
+            "allocation_cash": 0.0,
+            "allocation_managed_funds": 0.0,
+            "allocation_other": 0.0,
+            "short_term_tax_rate": 0.0,
+            "long_term_tax_rate": 0.0,
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Account.objects.filter(id=account_1.id).exists()
+
+    def test_update_account_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, account_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        data = {
+            "first_name": "John",
+            "last_name": "Doe",
+            "date_of_birth": "1990-01-01",
+            "salary": 10000.0,
+            "eoy_cash_goal": 20000.0,
+            "emergency_fund": 5000.0,
+            "allocation_intensity": 1,
+            "allocation_etfs": 0.0,
+            "allocation_stocks": 0.0,
+            "allocation_cryptocurrency": 0.0,
+            "allocation_cash": 0.0,
+            "allocation_managed_funds": 0.0,
+            "allocation_other": 0.0,
+            "short_term_tax_rate": 0.0,
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_account_incomplete_data(self, create_auth_client, custom_user_1, account_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        data = {
+            "first_name": "John",
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_partially_update_account_by_id(self, create_auth_client, custom_user_1, account_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        data = {
+            "first_name": "John",
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["first_name"] == data["first_name"]
+
+    def test_partially_update_account_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, account_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        data = {
+            "first_name": "John",
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

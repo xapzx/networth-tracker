@@ -62,7 +62,58 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ["user", "first_name", "last_name"]
+    model = BankAccount
+    list_display = ["pk", "first_name", "last_name", "user"]
+    list_filter = [
+        "allocation_intensity",
+    ]
+    search_fields = ("first_name", "last_name", "user__email")
+
+    fieldsets = (
+        (
+            "User Details",
+            {
+                "fields": (
+                    "first_name",
+                    "last_name",
+                    "date_of_birth",
+                )
+            },
+        ),
+        (
+            "Finance",
+            {
+                "fields": (
+                    "salary",
+                    "eoy_cash_goal",
+                    "emergency_fund",
+                )
+            },
+        ),
+        (
+            "Asset Allocation",
+            {
+                "fields": (
+                    "allocation_intensity",
+                    "allocation_etfs",
+                    "allocation_stocks",
+                    "allocation_cryptocurrency",
+                    "allocation_cash",
+                    "allocation_managed_funds",
+                    "allocation_other",
+                )
+            },
+        ),
+        (
+            "Tax Information",
+            {
+                "fields": (
+                    "short_term_tax_rate",
+                    "long_term_tax_rate",
+                )
+            },
+        ),
+    )
 
 
 @admin.register(BankAccount)

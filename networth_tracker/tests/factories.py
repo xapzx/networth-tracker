@@ -40,3 +40,19 @@ class AccountFactory(DjangoModelFactory):
     user = SubFactory(CustomUserFactory)
     first_name = fake.first_name()
     last_name = fake.last_name()
+    date_of_birth = fake.date_of_birth()
+
+    salary = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    eoy_cash_goal = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    emergency_fund = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+
+    allocation_intensity = fake.random_int(min=0, max=2)
+    allocation_etfs = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    allocation_stocks = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    allocation_cryptocurrency = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    allocation_cash = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    allocation_managed_funds = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    allocation_other = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+
+    short_term_tax_rate = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    long_term_tax_rate = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
