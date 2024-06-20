@@ -2,7 +2,13 @@ import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
 
-from networth_tracker.tests.factories import AccountFactory, BankAccountFactory, CustomUserFactory
+from networth_tracker.tests.factories import (
+    AccountFactory,
+    BankAccountFactory,
+    CustomUserFactory,
+    EtfFactory,
+    EtfTransactionFactory,
+)
 
 register(CustomUserFactory)
 register(CustomUserFactory, "custom_user_1")
@@ -13,6 +19,13 @@ register(BankAccountFactory, "bank_account_2")
 
 register(AccountFactory)
 register(AccountFactory, "account_1")
+
+register(EtfFactory)
+register(EtfFactory, "etf_1")
+register(EtfFactory, "etf_2")
+
+register(EtfTransactionFactory)
+register(EtfTransactionFactory, "etf_transaction_1")
 
 
 @pytest.fixture(scope="session")

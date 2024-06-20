@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import Account, BankAccount, CustomUser
+from .models import Account, BankAccount, CustomUser, Etf, EtfTransaction
 
 
 @admin.register(CustomUser)
@@ -119,3 +119,54 @@ class AccountAdmin(admin.ModelAdmin):
 @admin.register(BankAccount)
 class BankAccountAdmin(admin.ModelAdmin):
     list_display = ["user", "bank", "account_name", "balance", "interest_rate"]
+
+
+@admin.register(Etf)
+class EtfAdmin(admin.ModelAdmin):
+    list_display = ["user", "ticker", "fund_name", "units_held", "average_cost"]
+
+    search_fields = ["ticker", "fund_name", "user__email"]
+
+    fieldsets = (
+        (
+            "User Details",
+            {"fields": ("user",)},
+        ),
+        (
+            "Etf Details",
+            {
+                "fields": (
+                    "ticker",
+                    "fund_name",
+                    "units_held",
+                    "average_cost",
+                )
+            },
+        ),
+    )
+
+
+@admin.register(EtfTransaction)
+class EtfTransactionAdmin(admin.ModelAdmin):
+    list_display = ["etf", "transaction_type", "units", "order_cost"]
+    list_filter = ["transaction_type"]
+    search_fields = ["etf__ticker", "etf__fund_name", "etf__user__email"]
+
+    fieldsets = (
+        (
+            "Etf Details",
+            {"fields": ("etf",)},
+        ),
+        (
+            "Transaction Details",
+            {
+                "fields": (
+                    "transaction_type",
+                    "order_date",
+                    "units",
+                    "order_cost",
+                    "brokerage",
+                )
+            },
+        ),
+    )

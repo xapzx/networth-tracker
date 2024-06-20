@@ -6,8 +6,13 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from networth_tracker.api.serializers import BankAccountSerializer
-from networth_tracker.models import Account, BankAccount
+from networth_tracker.api.serializers import (
+    BankAccountSerializer,
+    CustomUserSerializer,
+    EtfSerializer,
+    EtfTransactionSerializer,
+)
+from networth_tracker.models import Account, BankAccount, Etf
 
 pytestmark = pytest.mark.django_db
 
@@ -319,3 +324,180 @@ class TestAccountViewSet:
         response = client.patch(url, data, format="json")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+class TestEtfViewSet:
+    def test_list_etfs_of_user_only(
+        self, create_auth_client, custom_user_1, etf_1, custom_user_factory, etf_factory
+    ):
+        etf_2 = etf_factory(user=custom_user_1, ticker="TSLA")
+
+        another_user = custom_user_factory(email="anotheruser@user.com")
+        etf_not_in = etf_factory(user=another_user, ticker="TSLA")
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-list")
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert EtfSerializer(etf_1).data in response.data
+        assert EtfSerializer(etf_2).data in response.data
+        assert EtfSerializer(etf_not_in).data not in response.data
+
+    def test_create_etf(self, create_auth_client, custom_user_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-list")
+        data = {
+            "ticker": "TSLA",
+            "fund_name": "Tesla",
+        }
+        response = client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert Etf.objects.filter(ticker="TSLA").exists()
+        assert response.data["user"] == CustomUserSerializer(custom_user_1).data
+        assert response.data["units_held"] == 0
+        assert response.data["average_cost"] == 0
+
+    def test_create_etf_not_unique(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-list")
+        data = {
+            "ticker": etf_1.ticker,
+            "fund_name": "Tesla",
+        }
+        response = client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_retrieve_etf_by_id(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert EtfSerializer(etf_1).data == response.data
+
+    def test_retrieve_etf_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_etf(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        data = {
+            "ticker": "TSLA",
+            "fund_name": "Tesla",
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert Etf.objects.filter(ticker="TSLA", user=custom_user_1).exists()
+        assert response.data["ticker"] == data["ticker"]
+        assert response.data["fund_name"] == data["fund_name"]
+
+    def test_update_etf_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        data = {
+            "ticker": "TSLA",
+            "fund_name": "Tesla",
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_etf_bad_request(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        data = {}
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_update_ticker_not_unique(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        data = {
+            "ticker": etf_1.ticker,
+            "fund_name": "Tesla",
+        }
+
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data["ticker"][0] == "Ticker already exists for this user."
+
+    def test_partially_update_etf_by_id(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        data = {
+            "ticker": "TSLA",
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["ticker"] == data["ticker"]
+
+    def test_partially_update_etf_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        data = {
+            "ticker": "TSLA",
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_etf(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Etf.objects.filter(pk=etf_1.id).exists()
+
+    def test_delete_etf_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_get_transactions_for_user(
+        self,
+        create_auth_client,
+        custom_user_1,
+        custom_user_factory,
+        etf_1,
+        etf_factory,
+        etf_transaction_factory,
+    ):
+        another_user = custom_user_factory(email="anotheruser@user.com")
+        another_user_etf = etf_factory(user=another_user)
+        another_user_etf_transaction = etf_transaction_factory(etf=another_user_etf)
+
+        etf_transaction_1 = etf_transaction_factory(etf=etf_1)
+        etf_transaction_2 = etf_transaction_factory(etf=etf_1)
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("etfs-detail", kwargs={"pk": etf_1.id}) + "transactions/"
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert EtfTransactionSerializer(etf_transaction_1).data in response.data
+        assert EtfTransactionSerializer(etf_transaction_2).data in response.data
+        assert EtfTransactionSerializer(another_user_etf_transaction).data not in response.data

@@ -69,3 +69,29 @@ class BankAccount(models.Model):
 
     def __str__(self):
         return f"{self.bank} - {self.account_name}"
+
+
+class Etf(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    ticker = models.CharField(max_length=100)
+    fund_name = models.CharField(max_length=100)
+    units_held = models.FloatField()
+    average_cost = models.FloatField()
+
+    def __str__(self):
+        return f"{self.fund_name} - {self.ticker}"
+
+
+class EtfTransaction(models.Model):
+    etf = models.ForeignKey(Etf, on_delete=models.CASCADE)
+
+    CHOICES = ((0, "Buy"), (1, "Sell"))
+    transaction_type = models.PositiveSmallIntegerField(choices=CHOICES)
+    order_date = models.DateField()
+    units = models.FloatField()
+    order_cost = models.FloatField()
+    brokerage = models.FloatField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.etf} - {self.units} - {self.order_cost}"

@@ -3,7 +3,7 @@ from factory import SubFactory
 from factory.django import DjangoModelFactory
 from faker import Faker
 
-from networth_tracker.models import Account, BankAccount
+from networth_tracker.models import Account, BankAccount, Etf, EtfTransaction
 
 # initialise the faker with en_AU locale
 fake = Faker("en_AU")
@@ -56,3 +56,26 @@ class AccountFactory(DjangoModelFactory):
 
     short_term_tax_rate = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
     long_term_tax_rate = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+
+
+class EtfFactory(DjangoModelFactory):
+    class Meta:
+        model = Etf
+
+    user = SubFactory(CustomUserFactory)
+    ticker = fake.word()
+    fund_name = fake.word()
+    units_held = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    average_cost = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+
+
+class EtfTransactionFactory(DjangoModelFactory):
+    class Meta:
+        model = EtfTransaction
+
+    etf = SubFactory(EtfFactory)
+    transaction_type = fake.random_int(min=0, max=1)
+    order_date = fake.date()
+    units = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    order_cost = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
+    brokerage = fake.pyfloat(left_digits=2, right_digits=2, positive=True)
