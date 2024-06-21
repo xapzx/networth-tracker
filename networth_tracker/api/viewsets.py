@@ -2,9 +2,14 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 
-from networth_tracker.api.permissions import isOwnerOrSuperuser, onlyAdminCanDelete
+from networth_tracker.api.permissions import (
+    isOwnerOrSuperuser,
+    onlyAdminCanDelete,
+    onlyOneAccountAllowed,
+)
 from networth_tracker.api.serializers import (
     AccountSerializer,
     BankAccountSerializer,
@@ -32,19 +37,24 @@ class AccountViewSet(ModelViewSet):
         - Delete (DELETE /accounts/<pk>): Deletes a specific account by its ID.
     """
 
-    def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
-            return AccountSerializer
-        return super().get_serializer_class()
-
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
-    permission_classes = [IsAuthenticated, isOwnerOrSuperuser, onlyAdminCanDelete]
+    permission_classes = [
+        IsAuthenticated,
+        isOwnerOrSuperuser,
+        onlyAdminCanDelete,
+        onlyOneAccountAllowed,
+    ]
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)
 
     def perform_create(self, serializer):
+        # Check if an account already exists for the user
+        if Account.objects.filter(user=self.request.user).exists():
+            raise ValidationError("An account already exists for this user.")
+
+        # Set the user field in the serializer on creation
         serializer.save(user=self.request.user)
 
 

@@ -58,6 +58,9 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
 
+    class Meta:
+        unique_together = ("user",)
+
 
 class BankAccount(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
