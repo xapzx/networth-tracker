@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from networth_tracker.api.permissions import isOwnerOrSuperuser
+from networth_tracker.api.permissions import isOwnerOrSuperuser, onlyAdminCanDelete
 from networth_tracker.api.serializers import (
     AccountSerializer,
     BankAccountSerializer,
@@ -39,7 +39,7 @@ class AccountViewSet(ModelViewSet):
 
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
-    permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
+    permission_classes = [IsAuthenticated, isOwnerOrSuperuser, onlyAdminCanDelete]
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user)

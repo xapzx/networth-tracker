@@ -36,3 +36,8 @@ def create_auth_client():
         return client
 
     return _create_auth_client
+
+
+@pytest.fixture
+def admin_user(custom_user_factory):
+    return custom_user_factory(is_staff=True)

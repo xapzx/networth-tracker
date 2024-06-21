@@ -6,12 +6,10 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from networth_tracker.api.serializers import (
-    BankAccountSerializer,
-    CustomUserSerializer,
-    EtfSerializer,
-    EtfTransactionSerializer,
-)
+from networth_tracker.api.serializers import (BankAccountSerializer,
+                                              CustomUserSerializer,
+                                              EtfSerializer,
+                                              EtfTransactionSerializer)
 from networth_tracker.models import Account, BankAccount, Etf
 
 pytestmark = pytest.mark.django_db
@@ -234,8 +232,18 @@ class TestAccountViewSet:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_delete_account_by_id(self, create_auth_client, custom_user_1, account_1):
+    def test_delete_account_restricted(self, create_auth_client, custom_user_1, account_1):
         client = create_auth_client(custom_user_1)
+        url = reverse("accounts-detail", kwargs={"pk": account_1.id})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Account.objects.filter(id=account_1.id).exists()
+
+    def test_delete_account_allowed_for_admins(
+        self, create_auth_client, admin_user, account_1
+    ):
+        client = create_auth_client(admin_user)
         url = reverse("accounts-detail", kwargs={"pk": account_1.id})
         response = client.delete(url)
 

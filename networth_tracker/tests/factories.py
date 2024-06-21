@@ -20,6 +20,7 @@ class CustomUserFactory(DjangoModelFactory):
     )
     is_verified = True
     is_active = True
+    is_staff = False
 
 
 class BankAccountFactory(DjangoModelFactory):
