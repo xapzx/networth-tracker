@@ -1,10 +1,13 @@
+# networth_tracker/api/viewsets.py
+
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 
+from networth_tracker.api.filters import UserFilterBackend
 from networth_tracker.api.permissions import (
     isOwnerOrSuperuser,
     onlyAdminCanDelete,
@@ -25,10 +28,11 @@ class AccountViewSet(ModelViewSet):
 
     Permissions:
         - Requires authentication.
-        - Only the owner or a superuser can view, modify or delete accounts.
+        - Only the owner or a superuser can view or modify accounts.
+        - Only one account is allowed per user.
+        - Only admins can delete accounts.
 
     Actions:
-
         - List (GET /accounts): Retrieves all accounts belonging to the user.
         - Create (POST /accounts): Creates a new account for the user.
         - Retrieve (GET /accounts/<pk>): Retrieves a specific account by its ID.
@@ -45,9 +49,7 @@ class AccountViewSet(ModelViewSet):
         onlyAdminCanDelete,
         onlyOneAccountAllowed,
     ]
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+    filter_backends = [UserFilterBackend]
 
     def perform_create(self, serializer):
         # Check if an account already exists for the user
@@ -56,12 +58,6 @@ class AccountViewSet(ModelViewSet):
 
         # Set the user field in the serializer on creation
         serializer.save(user=self.request.user)
-
-
-class AdminBankAccountViewSet(ModelViewSet):
-    queryset = BankAccount.objects.all()
-    serializer_class = BankAccountSerializer
-    permission_classes = [IsAdminUser]
 
 
 class BankAccountViewSet(ModelViewSet):
@@ -84,9 +80,7 @@ class BankAccountViewSet(ModelViewSet):
     queryset = BankAccount.objects.all()
     serializer_class = BankAccountSerializer
     permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+    filter_backends = [UserFilterBackend]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -117,9 +111,7 @@ class EtfViewSet(ModelViewSet):
     queryset = Etf.objects.all()
     serializer_class = EtfSerializer
     permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
-
-    def get_queryset(self):
-        return self.queryset.filter(user=self.request.user)
+    filter_backends = [UserFilterBackend]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user, units_held=0, average_cost=0)
@@ -158,4 +150,5 @@ class EtfTransactionViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
 
     def get_queryset(self):
-        return self.queryset.filter(etf__user=self.request.user)
+        queryset = super().get_queryset()
+        return queryset.filter(etf__user=self.request.user)
