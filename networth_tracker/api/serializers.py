@@ -25,6 +25,15 @@ class AccountSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("id",)
 
+    def create(self, validated_data, **kwargs):
+        user = self.context["request"].user
+
+        # Check if an account already exists for the user
+        if Account.objects.filter(user=user).exists():
+            raise serializers.ValidationError("An account already exists for this user.")
+
+        return super(AccountSerializer, self).create(validated_data)
+
 
 class BankAccountSerializer(serializers.ModelSerializer):
     user = CustomUserSerializer(read_only=True)

@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 from rest_framework.viewsets import ModelViewSet
 
 from networth_tracker.api.filters import UserFilterBackend
@@ -52,10 +51,6 @@ class AccountViewSet(ModelViewSet):
     filter_backends = [UserFilterBackend]
 
     def perform_create(self, serializer):
-        # Check if an account already exists for the user
-        if Account.objects.filter(user=self.request.user).exists():
-            raise ValidationError("An account already exists for this user.")
-
         # Set the user field in the serializer on creation
         serializer.save(user=self.request.user)
 
