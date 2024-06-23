@@ -2,13 +2,20 @@
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .managers import CustomUserManager
 
 
-class CustomUser(AbstractBaseUser, PermissionsMixin):
+class Timestamp(models.Model):
+    created_at = models.DateTimeField(_("created at"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("updated at"), auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class CustomUser(AbstractBaseUser, PermissionsMixin, Timestamp):
     email = models.EmailField(_("email address"), unique=True)
     is_staff = models.BooleanField(
         _("staff status"),
@@ -17,7 +24,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
     is_active = models.BooleanField(_("active status"), default=True)
     is_verified = models.BooleanField(default=False)
-    date_joined = models.DateTimeField(_("date joined"), default=timezone.now())
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
@@ -32,7 +38,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 
-class Account(models.Model):
+class Account(Timestamp):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     first_name = models.CharField(max_length=64)
@@ -62,7 +68,7 @@ class Account(models.Model):
         unique_together = ("user",)
 
 
-class BankAccount(models.Model):
+class BankAccount(Timestamp):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     bank = models.CharField(max_length=100)
@@ -74,7 +80,7 @@ class BankAccount(models.Model):
         return f"{self.bank} - {self.account_name}"
 
 
-class Etf(models.Model):
+class Etf(Timestamp):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     ticker = models.CharField(max_length=100)
@@ -86,7 +92,7 @@ class Etf(models.Model):
         return f"{self.fund_name} - {self.ticker}"
 
 
-class EtfTransaction(models.Model):
+class EtfTransaction(Timestamp):
     etf = models.ForeignKey(Etf, on_delete=models.CASCADE)
 
     CHOICES = ((0, "Buy"), (1, "Sell"))

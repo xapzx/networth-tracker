@@ -10,12 +10,12 @@ class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     form = CustomUserChangeForm
     model = CustomUser
-    ordering = ["-date_joined"]
+    ordering = ["-created_at"]
     list_display = [
         "email",
         "pk",
         "is_verified",
-        "date_joined",
+        "created_at",
         "last_login",
         "is_staff",
         "is_active",
@@ -23,7 +23,8 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ["is_verified", "is_staff"]
     filter_horizontal = ["groups", "user_permissions"]
     readonly_fields = [
-        "date_joined",
+        "created_at",
+        "updated_at",
         "last_login",
     ]
 
@@ -44,7 +45,7 @@ class CustomUserAdmin(UserAdmin):
                 )
             },
         ),
-        ("Dates", {"fields": ("date_joined", "last_login")}),
+        ("Dates", {"fields": ("created_at", "updated_at", "last_login")}),
     )
 
     add_fieldsets = (
@@ -68,6 +69,10 @@ class AccountAdmin(admin.ModelAdmin):
         "allocation_intensity",
     ]
     search_fields = ("first_name", "last_name", "user__email")
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+    ]
 
     fieldsets = (
         (
@@ -113,6 +118,7 @@ class AccountAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
     )
 
 
@@ -120,12 +126,41 @@ class AccountAdmin(admin.ModelAdmin):
 class BankAccountAdmin(admin.ModelAdmin):
     list_display = ["user", "bank", "account_name", "balance", "interest_rate"]
 
+    search_fields = ["bank", "account_name", "user__email"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+    ]
+
+    fieldsets = (
+        (
+            "User Details",
+            {"fields": ("user",)},
+        ),
+        (
+            "Bank Account Details",
+            {
+                "fields": (
+                    "bank",
+                    "account_name",
+                    "balance",
+                    "interest_rate",
+                )
+            },
+        ),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
+    )
+
 
 @admin.register(Etf)
 class EtfAdmin(admin.ModelAdmin):
     list_display = ["user", "ticker", "fund_name", "units_held", "average_cost"]
 
     search_fields = ["ticker", "fund_name", "user__email"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+    ]
 
     fieldsets = (
         (
@@ -143,6 +178,7 @@ class EtfAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
     )
 
 
@@ -151,6 +187,10 @@ class EtfTransactionAdmin(admin.ModelAdmin):
     list_display = ["etf", "transaction_type", "units", "order_cost"]
     list_filter = ["transaction_type"]
     search_fields = ["etf__ticker", "etf__fund_name", "etf__user__email"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+    ]
 
     fieldsets = (
         (
@@ -169,4 +209,5 @@ class EtfTransactionAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
     )
