@@ -3,6 +3,7 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from faker import Faker
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -11,8 +12,12 @@ from networth_tracker.api.serializers import (
     CustomUserSerializer,
     EtfSerializer,
     EtfTransactionSerializer,
+    SuperannuationSerializer,
 )
-from networth_tracker.models import Account, BankAccount, Etf
+from networth_tracker.models import Account, BankAccount, Etf, Superannuation
+
+# initialise the faker with en_AU locale
+fake = Faker("en_AU")
 
 pytestmark = pytest.mark.django_db
 
@@ -533,3 +538,162 @@ class TestEtfViewSet:
         assert EtfTransactionSerializer(etf_transaction_1).data in response.data
         assert EtfTransactionSerializer(etf_transaction_2).data in response.data
         assert EtfTransactionSerializer(another_user_etf_transaction).data not in response.data
+
+
+class TestSuperannuationViewSet:
+    def test_list_all_superannuations_for_user(
+        self,
+        create_auth_client,
+        custom_user_1,
+        custom_user_factory,
+        superannuation_1,
+        superannuation_factory,
+    ):
+        another_user = custom_user_factory(email="anotheruser@user.com")
+        another_user_superannuation = superannuation_factory(user=another_user)
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-list")
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert SuperannuationSerializer(superannuation_1).data in response.data
+        assert SuperannuationSerializer(another_user_superannuation).data not in response.data
+
+    def test_get_superannuation_by_id(self, create_auth_client, custom_user_1, superannuation_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == superannuation_1.id
+
+    def test_get_superannuation_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, superannuation_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_create_superannuation_for_user(
+        self,
+        create_auth_client,
+        custom_user_1,
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-list")
+        data = {
+            "provider": fake.company(),
+            "investment_plan": fake.word(),
+            "balance": fake.random_number(),
+            "market_returns": fake.random_number(),
+            "voluntary_contributions": fake.random_number(),
+        }
+
+        response = client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["user"]["id"] == custom_user_1.id
+
+    def test_update_superannuation_by_id(
+        self, create_auth_client, custom_user_1, superannuation_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        data = {
+            "provider": fake.company(),
+            "investment_plan": fake.word(),
+            "balance": fake.random_number(),
+            "market_returns": fake.random_number(),
+            "voluntary_contributions": fake.random_number(),
+        }
+
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["provider"] == data["provider"]
+
+    def test_update_superannuation_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, superannuation_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        data = {
+            "provider": fake.company(),
+            "investment_plan": fake.word(),
+            "balance": fake.random_number(),
+            "market_returns": fake.random_number(),
+            "voluntary_contributions": fake.random_number(),
+        }
+
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_superannuation_bad_request(
+        self, create_auth_client, custom_user_1, superannuation_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        data = {
+            "investment_plan": fake.word(),
+            "balance": fake.random_number(),
+            "market_returns": fake.random_number(),
+            "voluntary_contributions": fake.random_number(),
+        }
+
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_partially_update_superannuation_by_id(
+        self, create_auth_client, custom_user_1, superannuation_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        data = {
+            "provider": fake.company(),
+        }
+
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["provider"] == data["provider"]
+
+    def test_partially_update_superannuation_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, superannuation_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+        data = {
+            "provider": fake.company(),
+        }
+
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_superannuation_by_id(
+        self, create_auth_client, custom_user_1, superannuation_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        with pytest.raises(Superannuation.DoesNotExist):
+            Superannuation.objects.get(id=superannuation_1.id)
+
+    def test_delete_superannuation_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, superannuation_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("superannuations-detail", kwargs={"pk": superannuation_1.id})
+
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND

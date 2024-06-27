@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
-from networth_tracker.models import Account, BankAccount, CustomUser, Etf, EtfTransaction
+from networth_tracker.models import (
+    Account,
+    BankAccount,
+    CustomUser,
+    Etf,
+    EtfTransaction,
+    Superannuation,
+)
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
@@ -74,3 +81,12 @@ class EtfTransactionSerializer(serializers.ModelSerializer):
             )
 
         return value
+
+
+class SuperannuationSerializer(serializers.ModelSerializer):
+    user = CustomUserSerializer(read_only=True)
+
+    class Meta:
+        model = Superannuation
+        fields = "__all__"
+        read_only_fields = ("id",)

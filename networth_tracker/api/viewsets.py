@@ -17,8 +17,9 @@ from networth_tracker.api.serializers import (
     BankAccountSerializer,
     EtfSerializer,
     EtfTransactionSerializer,
+    SuperannuationSerializer,
 )
-from networth_tracker.models import Account, BankAccount, Etf, EtfTransaction
+from networth_tracker.models import Account, BankAccount, Etf, EtfTransaction, Superannuation
 
 
 class AccountViewSet(ModelViewSet):
@@ -147,3 +148,30 @@ class EtfTransactionViewSet(ModelViewSet):
     def get_queryset(self):
         queryset = super().get_queryset()
         return queryset.filter(etf__user=self.request.user)
+
+
+class SuperannuationViewSet(ModelViewSet):
+    """
+    API endpoint for managing user-owned `Superannuation`.
+
+    Permissions:
+        - Requires authentication (`IsAuthenticated`).
+        - Only the owner or a superuser can view, modify or delete superannuations
+          (`isOwnerOrSuperuser`).
+
+    Actions:
+
+        - List (GET /superannuations): Retrieves all superannuations for the current user
+        - Create (POST /superannuations): Creates a new superannuation for the current user
+        - Retrieve (GET /superannuations/<pk>): Retrieves a specific superannuation by its ID
+        - Update (PUT /superannuations/<pk>): Updates an existing superannuation for the user
+        - Delete (DELETE /superannuations/<pk>): Deletes a superannuation owned by the current user
+    """
+
+    queryset = Superannuation.objects.all()
+    serializer_class = SuperannuationSerializer
+    permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
+    filter_backends = [UserFilterBackend]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

@@ -104,3 +104,16 @@ class EtfTransaction(Timestamp):
 
     def __str__(self):
         return f"{self.etf} - {self.units} - {self.order_cost}"
+
+
+class Superannuation(Timestamp):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+
+    provider = models.CharField(max_length=100)
+    investment_plan = models.CharField(max_length=100)
+    balance = models.FloatField()
+    market_returns = models.FloatField()
+    voluntary_contributions = models.FloatField()
+
+    def __str__(self):
+        return f"{self.user} - {self.balance}"

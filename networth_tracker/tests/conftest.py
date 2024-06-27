@@ -8,6 +8,7 @@ from networth_tracker.tests.factories import (
     CustomUserFactory,
     EtfFactory,
     EtfTransactionFactory,
+    SuperannuationFactory,
 )
 
 register(CustomUserFactory)
@@ -26,6 +27,9 @@ register(EtfFactory, "etf_2")
 
 register(EtfTransactionFactory)
 register(EtfTransactionFactory, "etf_transaction_1")
+
+register(SuperannuationFactory)
+register(SuperannuationFactory, "superannuation_1")
 
 
 @pytest.fixture(scope="session")

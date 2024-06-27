@@ -1,8 +1,15 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .forms import CustomUserChangeForm, CustomUserCreationForm
-from .models import Account, BankAccount, CustomUser, Etf, EtfTransaction
+from networth_tracker.forms import CustomUserChangeForm, CustomUserCreationForm
+from networth_tracker.models import (
+    Account,
+    BankAccount,
+    CustomUser,
+    Etf,
+    EtfTransaction,
+    Superannuation,
+)
 
 
 @admin.register(CustomUser)
@@ -206,6 +213,44 @@ class EtfTransactionAdmin(admin.ModelAdmin):
                     "units",
                     "order_cost",
                     "brokerage",
+                )
+            },
+        ),
+        ("Dates", {"fields": ("created_at", "updated_at")}),
+    )
+
+
+@admin.register(Superannuation)
+class SuperannuationAdmin(admin.ModelAdmin):
+    list_display = [
+        "user",
+        "provider",
+        "investment_plan",
+        "balance",
+        "market_returns",
+        "voluntary_contributions",
+    ]
+
+    search_fields = ["provider", "user__email"]
+    readonly_fields = [
+        "created_at",
+        "updated_at",
+    ]
+
+    fieldsets = (
+        (
+            "User Details",
+            {"fields": ("user",)},
+        ),
+        (
+            "Superannuation Details",
+            {
+                "fields": (
+                    "provider",
+                    "investment_plan",
+                    "balance",
+                    "market_returns",
+                    "voluntary_contributions",
                 )
             },
         ),
