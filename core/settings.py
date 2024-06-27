@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "rest_framework.authtoken",
     "networth_tracker",
     "corsheaders",
 ]
@@ -137,7 +138,21 @@ CORS_ORIGIN_ALLOW_ALL = DEBUG
 
 # django-rest-framework
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
-    ]
+    ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "networth_tracker.api.throttling.MinuteRateThrottle",
+        "networth_tracker.api.throttling.DailyRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "10/hour",
+        "user_day": "10000/day",
+        "user_minute": "200/minute",
+    },
 }

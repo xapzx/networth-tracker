@@ -67,7 +67,7 @@ class TestUserBankAccountViewSet:
         url = reverse("bank-accounts-list")
         response = client.get(url)
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_get_user_bank_account_by_id(self, create_auth_client, custom_user_1, bank_account_1):
         url = reverse("bank-accounts-detail", kwargs={"pk": bank_account_1.id})
