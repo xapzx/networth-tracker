@@ -1,4 +1,4 @@
-from rest_framework import exceptions, permissions, response, views
+from rest_framework import permissions, response, views
 
 from .api import serializers as user_serializer
 
