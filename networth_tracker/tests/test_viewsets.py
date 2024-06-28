@@ -180,6 +180,96 @@ class TestUserBankAccountViewSet:
         assert response.status_code == status.HTTP_201_CREATED
         assert BankAccount.objects.filter(user=custom_user_1).exists()
 
+    def test_bank_account_search(
+        self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
+    ):
+
+        bank_account_2 = bank_account_factory(user=custom_user_1, bank="Different Bank")
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("bank-accounts-list")
+        response = client.get(url, {"search": bank_account_1.bank})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert BankAccountSerializer(bank_account_1).data in response.data
+        assert BankAccountSerializer(bank_account_2).data not in response.data
+
+    def test_bank_account_search_by_bank(
+        self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
+    ):
+        bank_account_2 = bank_account_factory(user=custom_user_1, bank="Different Bank")
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("bank-accounts-list")
+        response = client.get(url, {"bank": bank_account_1.bank})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert BankAccountSerializer(bank_account_1).data in response.data
+        assert BankAccountSerializer(bank_account_2).data not in response.data
+
+    def test_bank_account_search_by_account_name(
+        self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
+    ):
+        bank_account_2 = bank_account_factory(
+            user=custom_user_1, account_name="Different Account Name"
+        )
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("bank-accounts-list")
+        response = client.get(url, {"account_name": bank_account_1.account_name})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 1
+        assert BankAccountSerializer(bank_account_1).data in response.data
+        assert BankAccountSerializer(bank_account_2).data not in response.data
+
+    def test_bank_account_order_by_bank(
+        self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
+    ):
+        bank_account_1.bank = "CBA"
+        bank_account_1.save()
+        bank_account_2 = bank_account_factory(user=custom_user_1, bank="ANZ")
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("bank-accounts-list")
+        response = client.get(url, {"ordering": "bank"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert BankAccountSerializer(bank_account_1).data == response.data[1]
+        assert BankAccountSerializer(bank_account_2).data == response.data[0]
+
+    def test_bank_account_order_by_account_name(
+        self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
+    ):
+        bank_account_1.account_name = "B Saver"
+        bank_account_1.save()
+        bank_account_2 = bank_account_factory(user=custom_user_1, account_name="A Saver")
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("bank-accounts-list")
+        response = client.get(url, {"ordering": "account_name"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert BankAccountSerializer(bank_account_1).data == response.data[1]
+        assert BankAccountSerializer(bank_account_2).data == response.data[0]
+
+    def test_bank_account_order_by_balance(
+        self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
+    ):
+        bank_account_1.balance = 20000.0
+        bank_account_1.save()
+        bank_account_2 = bank_account_factory(user=custom_user_1, balance=10000.0)
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("bank-accounts-list")
+        response = client.get(url, {"ordering": "balance"})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert BankAccountSerializer(bank_account_1).data == response.data[1]
+        assert BankAccountSerializer(bank_account_2).data == response.data[0]
+
 
 class TestAccountViewSet:
     def test_account_is_created(self, create_auth_client, custom_user_1):

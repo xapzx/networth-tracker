@@ -1,12 +1,12 @@
 # networth_tracker/api/viewsets.py
 
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from networth_tracker.api.filters import UserFilterBackend
+from networth_tracker.api.filters import BankAccountFilterBackend, UserFilterBackend
 from networth_tracker.api.permissions import (
     isOwnerOrSuperuser,
     onlyAdminCanDelete,
@@ -76,7 +76,14 @@ class BankAccountViewSet(ModelViewSet):
     queryset = BankAccount.objects.all()
     serializer_class = BankAccountSerializer
     permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
-    filter_backends = [UserFilterBackend]
+    search_fields = ["bank", "account_name"]
+    ordering_fields = ["bank", "account_name", "balance"]
+    filter_backends = [
+        UserFilterBackend,
+        BankAccountFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
