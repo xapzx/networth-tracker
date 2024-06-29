@@ -14,7 +14,7 @@ from networth_tracker.api.serializers import (
     EtfTransactionSerializer,
     SuperannuationSerializer,
 )
-from networth_tracker.models import Account, BankAccount, Etf, Superannuation
+from networth_tracker.models import Account, BankAccount, Etf, EtfTransaction, Superannuation
 
 # initialise the faker with en_AU locale
 fake = Faker("en_AU")
@@ -628,6 +628,191 @@ class TestEtfViewSet:
         assert EtfTransactionSerializer(etf_transaction_1).data in response.data
         assert EtfTransactionSerializer(etf_transaction_2).data in response.data
         assert EtfTransactionSerializer(another_user_etf_transaction).data not in response.data
+
+
+class TestEtfTransactionViewSet:
+    def test_list_all_etf_transactions_for_user(
+        self,
+        create_auth_client,
+        custom_user_1,
+        custom_user_factory,
+        etf_1,
+        etf_factory,
+        etf_transaction_1,
+        etf_transaction_factory,
+    ):
+        another_user = custom_user_factory(email="anotheruser@user.com")
+        another_user_etf = etf_factory(user=another_user)
+        another_user_etf_transaction = etf_transaction_factory(etf=another_user_etf)
+
+        etf_transaction_2 = etf_transaction_factory(etf=etf_1)
+
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-list")
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        assert EtfTransactionSerializer(etf_transaction_1).data in response.data
+        assert EtfTransactionSerializer(etf_transaction_2).data in response.data
+        assert EtfTransactionSerializer(another_user_etf_transaction).data not in response.data
+
+    def test_get_etf_transactions_by_id(
+        self, create_auth_client, custom_user_1, etf_transaction_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert EtfTransactionSerializer(etf_transaction_1).data == response.data
+
+    def test_get_etf_transactions_by_id_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_transaction_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_get_etf_transactions_by_id_not_found(self, create_auth_client, custom_user_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": 999})
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_create_etf_transaction(self, create_auth_client, custom_user_1, etf_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-list")
+        data = {
+            "etf": etf_1.id,
+            "transaction_type": 0,
+            "units": 100,
+            "order_cost": 100.0,
+            "brokerage": 10.0,
+            "order_date": fake.date(),
+        }
+        response = client.post(url, data, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert EtfTransaction.objects.filter(pk=response.data["id"]).exists()
+
+    def test_delete_etf_transaction(self, create_auth_client, custom_user_1, etf_transaction_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not EtfTransaction.objects.filter(pk=etf_transaction_1.id).exists()
+
+    def test_delete_etf_transaction_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_transaction_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_delete_etf_transaction_not_found(self, create_auth_client, custom_user_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": 999})
+        response = client.delete(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_etf_transaction(self, create_auth_client, custom_user_1, etf_transaction_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        data = {
+            "etf": etf_transaction_1.etf.id,
+            "transaction_type": 0,
+            "units": 200,
+            "order_cost": 200.0,
+            "brokerage": 20.0,
+            "order_date": fake.date(),
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert EtfTransaction.objects.get(pk=etf_transaction_1.id).units == 200
+
+    def test_update_etf_transaction_restricted_if_not_owner(
+        self, create_auth_client, custom_user_factory, etf_transaction_1
+    ):
+        client = create_auth_client(custom_user_factory(email="anotheruser@user.com"))
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        data = {
+            "etf": etf_transaction_1.etf.id,
+            "transaction_type": 0,
+            "units": 200,
+            "order_cost": 200.0,
+            "brokerage": 20.0,
+            "order_date": fake.date(),
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_update_etf_transaction_bad_request(
+        self, create_auth_client, custom_user_1, etf_transaction_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        data = {
+            "transaction_type": 0,
+            "units": 200,
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_update_etf_transaction_not_found(self, create_auth_client, custom_user_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": 100})
+        data = {
+            "units": 200,
+        }
+        response = client.put(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_partially_update_etf_transaction(
+        self, create_auth_client, custom_user_1, etf_transaction_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": etf_transaction_1.id})
+        data = {
+            "units": 200,
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert EtfTransaction.objects.get(pk=etf_transaction_1.id).units == 200
+
+    def test_partially_update_etf_transaction_restricted_if_not_owner(
+        self, create_auth_client, custom_user_1
+    ):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": 100})
+        data = {
+            "units": 200,
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_partially_update_etf_transaction_not_found(self, create_auth_client, custom_user_1):
+        client = create_auth_client(custom_user_1)
+        url = reverse("etf-transactions-detail", kwargs={"pk": 100})
+        data = {
+            "units": 200,
+        }
+        response = client.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 class TestSuperannuationViewSet:

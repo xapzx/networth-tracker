@@ -150,7 +150,7 @@ class EtfTransactionViewSet(ModelViewSet):
 
     queryset = EtfTransaction.objects.all()
     serializer_class = EtfTransactionSerializer
-    permission_classes = [IsAuthenticated, isOwnerOrSuperuser]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = super().get_queryset()
