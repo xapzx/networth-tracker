@@ -1,11 +1,13 @@
 # networth_tracker/models.py
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from .managers import CustomUserManager
 
+PERCENTAGE_VALIDATOR = [MinValueValidator(0), MaxValueValidator(100)]
 
 class Timestamp(models.Model):
     created_at = models.DateTimeField(_("created at"), auto_now_add=True)
@@ -51,15 +53,15 @@ class Account(Timestamp):
 
     CHOICES = ((0, "Light"), (1, "Normal"), (2, "Aggressive"))
     allocation_intensity = models.PositiveSmallIntegerField(choices=CHOICES, default=1)
-    allocation_etfs = models.FloatField()
-    allocation_stocks = models.FloatField()
-    allocation_cryptocurrency = models.FloatField()
-    allocation_cash = models.FloatField()
-    allocation_managed_funds = models.FloatField()
-    allocation_other = models.FloatField()
+    allocation_etfs = models.FloatField(validators=PERCENTAGE_VALIDATOR)
+    allocation_stocks = models.FloatField(validators=PERCENTAGE_VALIDATOR)
+    allocation_cryptocurrency = models.FloatField(validators=PERCENTAGE_VALIDATOR)
+    allocation_cash = models.FloatField(validators=PERCENTAGE_VALIDATOR)
+    allocation_managed_funds = models.FloatField(validators=PERCENTAGE_VALIDATOR)
+    allocation_other = models.FloatField(validators=PERCENTAGE_VALIDATOR)
 
-    short_term_tax_rate = models.FloatField()
-    long_term_tax_rate = models.FloatField()
+    short_term_tax_rate = models.FloatField(validators=PERCENTAGE_VALIDATOR)
+    long_term_tax_rate = models.FloatField(validators=PERCENTAGE_VALIDATOR)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -74,7 +76,7 @@ class BankAccount(Timestamp):
     bank = models.CharField(max_length=100)
     account_name = models.CharField(max_length=100)
     balance = models.FloatField()
-    interest_rate = models.FloatField()
+    interest_rate = models.FloatField(validators=PERCENTAGE_VALIDATOR)
 
     def __str__(self):
         return f"{self.bank} - {self.account_name}"
@@ -103,7 +105,7 @@ class EtfTransaction(Timestamp):
     brokerage = models.FloatField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.etf} - {self.units} - {self.order_cost}"
+        return f"{self.etf} - {self.units} - {self.order_cost} - {self.transaction_type}"
 
 
 class Superannuation(Timestamp):
@@ -116,4 +118,4 @@ class Superannuation(Timestamp):
     voluntary_contributions = models.FloatField()
 
     def __str__(self):
-        return f"{self.user} - {self.balance}"
+        return f"{self.provider} - {self.investment_plan} - {self.user}"
