@@ -1,4 +1,37 @@
+[project]
+name = "networth-tracker"
+version = "0.1.0"
+description = "A network tracking application"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "asgiref>=3.8.1",
+    "django>=5.1.6",
+    "django-cors-headers>=4.7.0",
+    "djangorestframework>=3.15.2",
+    "gunicorn>=23.0.0",
+    "python-dateutil>=2.9.0.post0",
+    "six>=1.17.0",
+    "sqlparse>=0.5.3",
+    "whitenoise>=6.9.0",
+]
+
 [tool.black]
 line-length = 99
 target-version = ['py37', 'py38', 'py39']
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "coverage>=7.6.12",
+    "factory-boy>=3.3.3",
+    "fake-factory>=9999.9.9",
+    "faker>=36.1.1",
+    "flake8>=7.1.2",
+    "isort>=6.0.1",
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+    "pytest-django>=4.10.0",
+    "pytest-factoryboy>=2.7.0",
+]
 
