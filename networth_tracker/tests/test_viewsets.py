@@ -183,7 +183,6 @@ class TestUserBankAccountViewSet:
     def test_bank_account_search(
         self, create_auth_client, custom_user_1, bank_account_1, bank_account_factory
     ):
-
         bank_account_2 = bank_account_factory(user=custom_user_1, bank="Different Bank")
 
         client = create_auth_client(custom_user_1)

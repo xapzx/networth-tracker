@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("networth_tracker", "0002_alter_customuser_date_joined_account_bankaccount"),
     ]

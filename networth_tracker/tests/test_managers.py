@@ -7,7 +7,6 @@ pytestmark = pytest.mark.django_db
 
 
 class TestUsersManagers:
-
     def test_create_user(self):
         User = get_user_model()
         user = User.objects.create_user(email="normal@user.com", password="foo")

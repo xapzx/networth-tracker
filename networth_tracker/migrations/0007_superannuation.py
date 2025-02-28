@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("networth_tracker", "0006_remove_customuser_date_joined_account_created_at_and_more"),
     ]

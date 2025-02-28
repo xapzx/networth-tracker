@@ -11,7 +11,6 @@ from networth_tracker.models import (
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CustomUser
         fields = ("id", "email", "password")

@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("networth_tracker", "0004_alter_customuser_date_joined_etf_etftransaction"),
     ]

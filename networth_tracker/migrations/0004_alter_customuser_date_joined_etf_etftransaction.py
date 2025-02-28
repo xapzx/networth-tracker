@@ -7,7 +7,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("networth_tracker", "0003_account_allocation_cash_and_more"),
     ]
